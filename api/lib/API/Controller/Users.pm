@@ -41,6 +41,7 @@ sub list {
   Schema::UserData->BUILD;
   Schema::DataAttributes->BUILD;
   Schema::SystemStatuses->BUILD;
+  # $log->debug("user_id: ".Dumper($self->stash('user_id')));
 
    ## params validation
   # my $validation = {
@@ -48,11 +49,14 @@ sub list {
   # };
   # return if $self->livrvalidate($params, undef, $validation);
 
+  ## check privilieges
+  
+
   ## get User Attributes
   my @UserAttribues = Schema->dbix->select('data_attributes', '*', { attribute_group => 'users' })->hashes;
-  $log->debug(Dumper(\@UserAttribues));
+  # $log->debug(Dumper(\@UserAttribues));
   my %a = map { $_->{id} => $_ } @UserAttribues;
-  $log->debug(Dumper \%a);
+  # $log->debug(Dumper \%a);
 
   ## get Users
   my @Users = Schema->dbix->select('users', '*')->hashes;
@@ -70,7 +74,7 @@ sub list {
     $Users[$i]->{attributes} = \@UserData;
   }
 
-  $log->debug(Dumper \@Users);
+  # $log->debug(Dumper \@Users);
   
   $self->render( json => {status => 'ok', users => \@Users} );
 }

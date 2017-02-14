@@ -58,7 +58,8 @@ $cakeDescription = 'CakePHP: the rapid development php framework';
         <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
             <ul class="nav navbar-nav">
                 <li class="active"><?= $this->Html->link('Home <span class="sr-only">(current)</span>', '/', ['escape' => false]) ?></li>
-                <li><?= $this->Html->link('Users', '/users') ?></li>
+                <li><?= $this->Html->link('Users', '/Users') ?></li>
+                <li><?= $this->Html->link('Tools', '/Tools') ?></li>
 
             </ul>
             <ul class="nav navbar-nav navbar-right">

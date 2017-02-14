@@ -97,6 +97,10 @@ sub authenticate_session {
   my $Schema;
   Schema::AuthenticationSessions->BUILD;
 
+  
+
+
+
   $log->debug(Dumper $session_token);
 
   ## params validation
@@ -115,30 +119,63 @@ sub authenticate_session {
   my $authentication_entity_id = $AuthenticationSessions->data->{authentication_entity_id};
 
   $Schema = Schema->dbix->select('user_authentication_entities', 'user_id', {authentication_entity_id => $authentication_entity_id});
-  return $self->render( json => {status => 'fail', 'error_message' => 'Invalid User'}, status => 401 ) unless $Schema->rows == 1;
+  return unless $Schema->rows == 1;
   $Schema->into(my $user_id);
 
   $Schema = Schema->dbix->select('users', '*', {id => $user_id});
-  return $self->render( json => {status => 'fail', 'error_message' => 'Invalid Login'}, status => 401 ) unless $Schema->rows == 1;
+  return unless $Schema->rows == 1;
   my $Users = $Schema->hash;
 
   ## check status of user
   ## todo: improve check - check status with SQL, not with perl == ID
   Schema->dbix->select('system_statuses', 'id', {title => 'user_active', system_group => 'users'})
     ->into(my $user_active);
-  unless($Users->{system_status_id} == $user_active)
-  {
-    return $self->render( json => {status => 'fail', 'error_message' => 'User not active'}, status => 404 );
-  }
+  
+  return unless $Users->{system_status_id} == $user_active;
 
   ## update session
   $AuthenticationSessions->dbdate_modified( $self->now(time_zone => 'local')
-    ->strftime('%F %T') )
-    ->update;
+  ->strftime('%F %T') )
+  ->update;
 
   Schema->dbix->commit;
 
-  $self->render( json => {status => 'ok'} );
+  ## store user_id
+  $self->stash({user_id => $user_id});
+
+  ## check route priviliges
+  my %PRIVILIGES = (
+    user_administration => [
+      'API::Controller::Users' => {
+        c => ['add'],
+        r => ['list'],
+        u => [],
+        d => [],
+      },
+    ]
+  );
+
+  my @PRIV = Schema->dbix->select('user_module_privileges', '*', { user_id => $user_id })
+  ->hashes;
+  # $log->info("PRIVILIGES: ".Dumper(\@Priv));
+  for my $i (keys @PRIV)
+  {
+    my $tmp = Schema->dbix->select('modules', 'title, description' , { id => $PRIV[$i]->{module_id} })->hash;
+    
+    foreach my $index (sort keys $tmp)
+    {
+      $PRIV[$i]->{$index} = $tmp->{$index};
+    }
+  }
+  $log->info(Dumper(\@PRIV));
+
+  for my $i (@PRIV)
+  {
+    # my $priv_title = $PRIV[$i]->{title};
+    # my $curr_priv = $PRIVILIGES{ $priv_title } || '';
+  }
+
+  return 1;
 }
 
 sub verify_new_user {
