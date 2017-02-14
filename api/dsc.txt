@@ -1,0 +1,1 @@
+dsc_dump_schema.pl -d 'DBI:mysql:database=db_Intranet2017;host=localhost;mysql_enable_utf8=1' -u 'intranet2017' -p '!ntr@n3t2017' --overwrite 1 --lib_root ./lib -n 'Schema'
